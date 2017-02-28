@@ -14,53 +14,50 @@
 
 // cheaty error handle function. it's terrible.
 void handleError(char s[150]) {
-    printf("ERROR %i: %s:\n%s",errno, sys_errlist[errno], s);
+    printf("ERROR %i: %s:\n %s",errno, sys_errlist[errno], s);
     _exit(EXIT_SUCCESS); // keyword defined someplace I have no idea.. probably
 }
-// create argv** to pass to new process
-void readCmd(char** new_argv, char* filename) {
-	char* line = malloc(sizeof(char)* 255);
-	size_t count;
-		getline(&line, &count, stdin);
-		printf("%s",(char*)line);
-		int i = 0;
-		while ((new_argv[i++] = strtok(line, (char*)" ")) != NULL) {
-
-		}
-
-
-}
-
 int mainloop(char** env) {
     // set up vars
     pid_t new_pid;
     int wait_status;
-    char** new_argv = NULL;
-		char* fn = NULL;
+    char* new_argv[50];
+    char* fn = NULL;
+    char* line = malloc(sizeof(char)* 255);
+    size_t size = 1;
+    char* token;
+    int i = 0;
+
     //prompt user for command
     printf("%s",(char*)"\nBOBSHELL>");
-    //build new argv.
-		readCmd(new_argv, fn);
+    getline(&line, &size, stdin);
+		//parse command into new_argv
+    while ((token = strsep(&line, " ")) != NULL) {
+        new_argv[i++] = token;
+        printf("\nCommand was:%lu %s\n", size, new_argv[i-1]);
+    }
+		new_argv[i+1] = NULL;
     //check for built in function call cases (just exit for now)
-		/*
     if (strcmp(new_argv[0], (char*)"exit\n") == 0) {
+			free(line);
         return 0;
     }
-
     //fork and execute new process.
     if ((new_pid = fork()) == -1) {
         handleError((char*)"could not fork\0");
     } else if (new_pid == 0) { // is child
-
-        if (execve(strcat(new_argv[0], (char*)"\0"), new_argv, env) == -1) {
+			printf("\n I am a child, and should launch stuff now...\n");
+        if (execve(new_argv[0], new_argv, env) == -1) {
             handleError((char*)"could not execute new process\0");
         }
     } else {
         waitpid(new_pid,&wait_status,0);
+				free(line);
+				printf("\nControl returned to parent process.");
         return 1;
     }
-		*/
-		return 1;
+		free(line);
+    return 1;
 }
 
 int main(int argc, char *argv[], char *envp[]) {
