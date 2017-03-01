@@ -47,7 +47,7 @@ int mainloop(char** env) {
         handleError((char*)"could not fork\0");
     } else if (new_pid == 0) { // is child
 			printf("\n I am a child, and should launch stuff now...\n");
-        if (execve(new_argv[0], new_argv, env) == -1) {
+        if (execve(strcat((char*)"./",new_argv[0]), new_argv, env) == -1) {
             handleError((char*)"could not execute new process\0");
         }
     } else {
