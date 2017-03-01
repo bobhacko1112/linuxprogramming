@@ -23,40 +23,65 @@ int mainloop(char** env) {
     int wait_status;
     char* new_argv[50];
     char* fn = NULL;
-    char* line = malloc(sizeof(char)* 255);
+    char* line = malloc(sizeof(char) * 255);
     size_t size = 1;
     char* token;
     int i = 0;
-
     //prompt user for command
     printf("%s",(char*)"\nBOBSHELL>");
     getline(&line, &size, stdin);
-		//parse command into new_argv
+
+    //parse command into new_argv
     while ((token = strsep(&line, " ")) != NULL) {
         new_argv[i++] = token;
-        printf("\nCommand was:%lu %s\n", size, new_argv[i-1]);
     }
-		new_argv[i+1] = NULL;
-    //check for built in function call cases (just exit for now)
-    if (strcmp(new_argv[0], (char*)"exit\n") == 0) {
-			free(line);
+
+    new_argv[i--] = NULL; // make sure we cap off the new argv. and set i to be the last legal element.
+		//now terminate the last string with the correct \0 because strsep doesn't do it for the last element. how lame.
+		int j = 0;
+		while (new_argv[i][j] != '\0') {
+			if (new_argv[i][j] == '\n') {
+				new_argv[i][j] = '\0';
+				break;
+			}
+			j++;
+		}
+
+		// Check for 'Builtin' commands.
+    if (strcmp(new_argv[0], (char*)"exit\0") == 0) {
+        free(line);
         return 0;
-    }
+    } else if (strcmp(new_argv[0], (char*)"pwd\0") == 0) {
+        free(line);
+        printf("%s",(char*)get_current_dir_name());
+        return 1;
+    } else if (strcmp(new_argv[0], (char*)"cd\0") == 0) {
+			if (chdir(new_argv[1]) == -1) {
+				printf("INVALID DIR");
+				free(line);
+				return 1;
+			}
+			printf("\nPath is now: %s\n", (char*)get_current_dir_name());
+			return 1;
+		}
+
     //fork and execute new process.
     if ((new_pid = fork()) == -1) {
         handleError((char*)"could not fork\0");
     } else if (new_pid == 0) { // is child
-			printf("\n I am a child, and should launch stuff now...\n");
-        if (execve(strcat((char*)"./",new_argv[0]), new_argv, env) == -1) {
+
+        if (execve(new_argv[0], new_argv, env) == -1) {
             handleError((char*)"could not execute new process\0");
         }
+
     } else {
         waitpid(new_pid,&wait_status,0);
-				free(line);
-				printf("\nControl returned to parent process.");
+        free(line);
+        printf("\nControl returned to parent process.");
         return 1;
     }
-		free(line);
+
+    free(line);
     return 1;
 }
 
