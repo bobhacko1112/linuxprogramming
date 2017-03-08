@@ -7,15 +7,9 @@
 #include <errno.h>
 #include <string.h>
 #include <math.h>
+#include "../include/boberr.h"
 #define file_size 3000000000 //roughly 3 billion bytes for large file test.
 #define buffer_size 4096 //buffer size for read/write functions.
-
-// cheaty error handle function. it's terrible.
-void handleError(char s[150]) {
-    printf("ERROR!!! STUFF BROKE BECAUSE: %s \n", s );
-    exit(EXIT_SUCCESS); // keyword defined someplace I have no idea.. probably
-}
-
 // this function hawks up a buffer of s size  (in bytes) of goo. to b buffer
 void alphabetPuker(int s, char* b) {
     int i;
@@ -40,33 +34,32 @@ int main(int argc, char *argv[]) {
 
     // check for arguments.
     if (argc < 3) {
-        handleError((char*)
-                    "Incorrect usage! I take 2 arguments, they are filenames.");
+        handleError();
     }
 
     // open the file from argument 1, read only.
     file_descriptor_input = open(argv[1], O_RDONLY);
 
     if (file_descriptor_input == -1) {
-        handleError((char*)"First file open call messed up");
+        handleError();
     }
 
     // now open the new file we want to copy to.
     file_descriptor_output = open(argv[2], flags, permissions);
 
     if (file_descriptor_output == -1) {
-        handleError((char*)"First output file open call messed up");
+        handleError();
     }
 
     // read input descriptor until empty and put it in output descriptor.
     while((buffer_length = read(file_descriptor_input, buffer,
                                 buffer_size)) > 0) {
         if (buffer_length == -1) {
-            handleError((char*)"Error reading first file.");
+            handleError();
         }
 
         if ( write(file_descriptor_output, buffer, buffer_length) == -1) {
-            handleError((char*)"Error writing to output file!");
+            handleError();
         }
     }
 

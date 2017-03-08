@@ -10,13 +10,8 @@
 #include <errno.h>
 #include <string.h>
 #include <time.h>
+#include "../include/boberr.h"
 #define buffer_size 4096 //buffer size for read/write functions.
-
-// cheaty error handle function. it's terrible.
-void handleError(char s[150]) {
-    printf("ERROR!!! STUFF BROKE BECAUSE: %s \n", s );
-    exit(EXIT_SUCCESS); // keyword defined someplace I have no idea.. probably
-}
 
 int main(int argc, char *argv[]) {
     struct stat sb;
@@ -26,7 +21,7 @@ int main(int argc, char *argv[]) {
     }
 
     if (stat(argv[1], &sb) == -1) {
-        handleError((char*)"stat returned -1");
+        handleError();
     }
 
     switch (sb.st_mode & S_IFMT) {

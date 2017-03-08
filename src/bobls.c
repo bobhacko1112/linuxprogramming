@@ -8,14 +8,8 @@
 #include <errno.h>
 #include <string.h>
 #include <dirent.h>
+#include "../include/boberr.h"
 #define buffer_size 4096 //buffer size for read/write functions.
-
-// cheaty error handle function. it's terrible.
-void handleError(char s[150]) {
-    printf("ERROR!!! STUFF BROKE BECAUSE: %s \n", s );
-    _exit(EXIT_SUCCESS); // keyword defined someplace I have no idea.. probably
-}
-
 int main(int argc, char *argv[]) {
 
 	struct dirent* dirinfo;

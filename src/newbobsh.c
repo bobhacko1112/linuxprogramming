@@ -11,13 +11,7 @@
 #include <string.h>
 #define buffer_size 1024 //buffer size for read/write functions.
 #define max_arg_count 50 //max amount of arguments that can be passed.
-
-int mainloop(char** env) {
-    // set up vars
-    pid_t new_pid;
-    int wait_status;
-    char* new_argv[50];
-    char* fn = NULL;
+int parseInput(char* new_argv[]) {
     char* line = malloc(sizeof(char) * 255);
     size_t size = 1;
     char* token;
@@ -25,7 +19,6 @@ int mainloop(char** env) {
     //prompt user for command
     printf("%s",(char*)"\nBOBSHELL>");
     getline(&line, &size, stdin);
-
     //parse command into new_argv
     while ((token = strsep(&line, " ")) != NULL) {
         new_argv[i++] = token;
@@ -41,7 +34,12 @@ int mainloop(char** env) {
 			}
 			j++;
 		}
-
+		free(line);
+		return 0;
+}
+int runCommands(){
+}
+int builtins(const char* new_argv[]){
 		// Check for 'Builtin' commands.
     if (strcmp(new_argv[0], (char*)"exit\0") == 0) {
         free(line);
@@ -59,7 +57,15 @@ int mainloop(char** env) {
 			printf("\nPath is now: %s\n", (char*)get_current_dir_name());
 			return 1;
 		}
-
+}
+int pipeExec(){
+}
+int redirectExec(){
+}
+int regularExec(const char* new_argv[], const char* envp[]){
+    // set up vars
+    pid_t new_pid;
+    int wait_status;
     //fork and execute new process.
     if ((new_pid = fork()) == -1) {
         handleError();
@@ -71,13 +77,15 @@ int mainloop(char** env) {
 
     } else {
         waitpid(new_pid,&wait_status,0);
-        free(line);
         printf("\nControl returned to parent process.");
-        return 1;
+        return 0;
     }
 
-    free(line);
-    return 1;
+    return 0;
+}
+
+int mainloop(char** env) {
+	char* new_argv[50];
 }
 
 int main(int argc, char *argv[], char *envp[]) {
