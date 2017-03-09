@@ -2,16 +2,14 @@
  * bobshell, a crappy shell that does a thing.
  *
  */
-#include <sys/types.h>
-#include <sys/wait.h>
 #include "../include/boberr.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <string.h>
-#define buffer_size 1024 //buffer size for read/write functions.
-#define max_arg_count 50 //max amount of arguments that can be passed.
-
+#include "../include/bobsh.h"
+/* sudocode for pipe execute.
+ * fork process.
+ * if child :
+ *
+ *
+ */
 int mainloop(char** env) {
     // set up vars
     pid_t new_pid;
