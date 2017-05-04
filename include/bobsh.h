@@ -4,10 +4,12 @@
  */
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <sys/stat.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <fcntl.h>
 #include "../include/boberr.h"
 #define redirect_pipe_output 1
 #define redirect_pipe_input 2
