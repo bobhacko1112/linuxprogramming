@@ -14,8 +14,6 @@ int run(struct Proc p, pid_t* pid, int pipefd[]) {
     }
 
     if (*pid == 0) { // is child
-        printf("I AM A CHILD!\n");
-
         if (p.flags & redirect_pipe_output) {
             // set output of program to pipefd[1]
             close(STDOUT_FILENO);
@@ -70,15 +68,21 @@ int run(struct Proc p, pid_t* pid, int pipefd[]) {
 
         if (p.flags & is_builtin) {
             // deal with builtins
+            char buf[150];
+						char* cwd;
+
             switch (commandType(p.argv[0])) {
             case 8: // quit
-                exit(0);
+							exit(0);
                 break;
 
             case 9: // cd
+                return chdir(p.filename);
                 break;
 
             case 10: //pwd
+								cwd = getcwd(buf, 150);
+								printf("\n%s",cwd);
                 break;
             };
         }
@@ -151,7 +155,7 @@ size_t parseInput(struct Proc* proclist) {
      */
     int i,j,k, cmdlist_size;
     size_t s;
-    printf("BOBSHELL> ");
+    printf("\nBOBSHELL> ");
     getline(&line, &s, stdin);
     line[strlen(line)-1] = '\0';
     cmdlist_size = 0;
@@ -160,17 +164,14 @@ size_t parseInput(struct Proc* proclist) {
     // put input into array of words.
     while ((token = strsep(&line," "))) {
         cmd_list[cmdlist_size++] = strdup(token);
-				printf("\nToken: %s",token);
     }
-printf ("\nsize was: %i", cmdlist_size);
+
     j = 0;
     k = 0;
 
     for (i = 0; i < cmdlist_size; i++) {
-        unsigned int type = commandType(cmd_list[i]);
 
-					printf("\nThe command type is: %i", type);
-        switch (type) {
+        switch (commandType(cmd_list[i])) {
         case 0: // Normal command, just add to argv list of process object
             proclist[j].argv[k++] = cmd_list[i];
             break;
@@ -190,40 +191,45 @@ printf ("\nsize was: %i", cmdlist_size);
             break;
 
         case 3:
-						proclist[j].flags = proclist[j].flags | redirect_output_to_file_append;
-						proclist[j].filename = cmd_list[++i];
+            proclist[j].flags = proclist[j].flags |
+                                redirect_output_to_file_append;
+            proclist[j].filename = cmd_list[++i];
             break;
 
         case 4:
-						proclist[j].flags = proclist[j].flags | redirect_error_to_file;
-						proclist[j].filename = cmd_list[++i];
+            proclist[j].flags = proclist[j].flags | redirect_error_to_file;
+            proclist[j].filename = cmd_list[++i];
             break;
 
         case 5:
-						proclist[j].flags = proclist[j].flags | redirect_error_to_file_append;
-						proclist[j].filename = cmd_list[++i];
-
+            proclist[j].flags = proclist[j].flags | redirect_error_to_file_append;
+            proclist[j].filename = cmd_list[++i];
             break;
 
         case 6:
-						proclist[j].flags = proclist[j].flags | redirect_file_to_input;
-						proclist[j].filename = cmd_list[++i];
+            proclist[j].flags = proclist[j].flags | redirect_file_to_input;
+            proclist[j].filename = cmd_list[++i];
             break;
 
         case 7:
-						// run in background
+            // run in background
             break;
 
-        case 8:
-        case 9:
-        case 10:
+        case 8://quit
 						proclist[j].flags = proclist[j].flags | is_builtin;
-						proclist[j].argv[0]  = cmd_list[++i];
+						proclist[j].argv[0] = cmd_list[i];
+        case 9: //cd
+						proclist[j].flags = proclist[j].flags | is_builtin;
+						proclist[j].filename = cmd_list[i+1];
+
+        case 10: //pwd
+            proclist[j].flags = proclist[j].flags | is_builtin;
+            proclist[j].argv[0]  = cmd_list[i];
             break;
         };
-
     }
-        return ++proclist_size;
+
+    return ++proclist_size;
 }
 
 // diagnostic function. unused in actual program.
@@ -260,12 +266,14 @@ int mainloop(char** envp) {
     pipe(pipefd);
 
     for (i = 0; i < size; i++) {
-			run(process_list[i], &pid, pipefd);
+       if ( run(process_list[i], &pid, pipefd)) {
+				 return 1;
+			 }
     }
 
     return 0;
 }
 
 int main(int argc, char *argv[], char *envp[]) {
-    while (!mainloop(envp)) continue;
+    while (mainloop(envp) < 1) continue;
 }
