@@ -4,14 +4,6 @@
 #include "../include/boberr.h"
 #include "../include/bobsh.h"
 
-struct Proc {
-    unsigned int flags;
-    pid_t* pid;
-    char** argv;
-    int* wait_status;
-    char** envp;
-    char* filename;
-}; // end struct def
 
 // runs a single process from Proc p.
 int run(struct Proc p, pid_t* pid, int pipefd[]) {
@@ -78,6 +70,17 @@ int run(struct Proc p, pid_t* pid, int pipefd[]) {
 
         if (p.flags & is_builtin) {
             // deal with builtins
+            switch (commandType(p.argv[0])) {
+            case 8: // quit
+                exit(0);
+                break;
+
+            case 9: // cd
+                break;
+
+            case 10: //pwd
+                break;
+            };
         }
 
         if (execve(p.argv[0], p.argv, p.envp) == -1) {
@@ -85,6 +88,7 @@ int run(struct Proc p, pid_t* pid, int pipefd[]) {
         }
     }
 
+    wait(0);
     // end main if body
     return 0;
 } // end of run()
@@ -155,19 +159,19 @@ size_t parseInput(struct Proc* proclist) {
 
     // put input into array of words.
     while ((token = strsep(&line," "))) {
-        printf("%s", token);
-        cmd_list[cmdlist_size++]= token;
+        cmd_list[cmdlist_size++] = strdup(token);
+				printf("\nToken: %s",token);
     }
-
-    cmdlist_size++;
+printf ("\nsize was: %i", cmdlist_size);
     j = 0;
     k = 0;
 
     for (i = 0; i < cmdlist_size; i++) {
         unsigned int type = commandType(cmd_list[i]);
 
+					printf("\nThe command type is: %i", type);
         switch (type) {
-        case 0:
+        case 0: // Normal command, just add to argv list of process object
             proclist[j].argv[k++] = cmd_list[i];
             break;
 
@@ -182,13 +186,44 @@ size_t parseInput(struct Proc* proclist) {
         case 2:
             proclist[j].flags = proclist[j].flags | redirect_output_to_file;
             proclist[j].filename = cmd_list[++i];
-            proclist_size++;
             j++;
+            break;
+
+        case 3:
+						proclist[j].flags = proclist[j].flags | redirect_output_to_file_append;
+						proclist[j].filename = cmd_list[++i];
+            break;
+
+        case 4:
+						proclist[j].flags = proclist[j].flags | redirect_error_to_file;
+						proclist[j].filename = cmd_list[++i];
+            break;
+
+        case 5:
+						proclist[j].flags = proclist[j].flags | redirect_error_to_file_append;
+						proclist[j].filename = cmd_list[++i];
+
+            break;
+
+        case 6:
+						proclist[j].flags = proclist[j].flags | redirect_file_to_input;
+						proclist[j].filename = cmd_list[++i];
+            break;
+
+        case 7:
+						// run in background
+            break;
+
+        case 8:
+        case 9:
+        case 10:
+						proclist[j].flags = proclist[j].flags | is_builtin;
+						proclist[j].argv[0]  = cmd_list[++i];
             break;
         };
 
-        return ++proclist_size;
     }
+        return ++proclist_size;
 }
 
 // diagnostic function. unused in actual program.
@@ -206,27 +241,31 @@ void checkArgvs(char* new_argvs[50][50], size_t size) {
 
 int mainloop(char** envp) {
     struct Proc process_list[50];
-    size_t i;
+    size_t i,j;
 
     for (i = 0; i < 50; i++) {
+        struct Proc newproc;
+        process_list[i] = newproc;
         process_list[i].flags = 0;
         process_list[i].filename = "\0";
+
+        for (j = 0; j < 50; j++) {
+            process_list[i].argv[j] = 0;
+        }
     }
 
     size_t size = parseInput(process_list);
+    pid_t pid;
+    int pipefd[2];
+    pipe(pipefd);
 
     for (i = 0; i < size; i++) {
-        int pipefd[2];
-        pid_t pid;
-        pipe(pipefd);
-        run(process_list[i], &pid, pipefd);
-        close(pipefd[1]);
-        close(pipefd[0]);
+			run(process_list[i], &pid, pipefd);
     }
 
     return 0;
 }
 
 int main(int argc, char *argv[], char *envp[]) {
-    while (mainloop(envp)) continue;
+    while (!mainloop(envp)) continue;
 }
