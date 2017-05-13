@@ -73,16 +73,21 @@ int run(struct Proc p, pid_t* pid, int pipefd[]) {
 
             switch (commandType(p.argv[0])) {
             case 8: // quit
-							exit(0);
+							printf("Found quit command!");
+							_exit(0);
+							return 0;
                 break;
 
             case 9: // cd
+								printf("Found CD command!");
                 return chdir(p.filename);
+								return 0;
                 break;
 
             case 10: //pwd
 								cwd = getcwd(buf, 150);
 								printf("\n%s",cwd);
+								return 0;
                 break;
             };
         }
@@ -220,7 +225,9 @@ size_t parseInput(struct Proc* proclist) {
 						proclist[j].argv[0] = cmd_list[i];
         case 9: //cd
 						proclist[j].flags = proclist[j].flags | is_builtin;
-						proclist[j].filename = cmd_list[i+1];
+						proclist[j].argv[0] = cmd_list[i];
+						proclist[j].filename = cmd_list[++i];
+
 
         case 10: //pwd
             proclist[j].flags = proclist[j].flags | is_builtin;
