@@ -7,6 +7,35 @@
 
 // runs a single process from Proc p.
 int run(struct Proc p, pid_t* pid, int pipefd[]) {
+        if (p.flags & is_builtin) {
+					printf("Found a builtin!");
+            // deal with builtins
+            char buf[150];
+						char* cwd;
+
+            switch (commandType(p.argv[0])) {
+            case 8: // quit
+							printf("Found quit command!");
+							exit(0);
+							return 0;
+                break;
+
+            case 9: // cd
+								printf("Found CD command!");
+                return chdir(p.filename);
+								return 0;
+                break;
+
+            case 10: //pwd
+								cwd = getcwd(buf, 150);
+								printf("\n%s",cwd);
+								return 0;
+                break;
+            };
+						return 0;
+
+        }
+
     *pid = fork();
 
     if (*pid == -1) {
@@ -66,36 +95,12 @@ int run(struct Proc p, pid_t* pid, int pipefd[]) {
             open(p.filename,O_RDONLY);
         }
 
-        if (p.flags & is_builtin) {
-            // deal with builtins
-            char buf[150];
-						char* cwd;
-
-            switch (commandType(p.argv[0])) {
-            case 8: // quit
-							printf("Found quit command!");
-							_exit(0);
-							return 0;
-                break;
-
-            case 9: // cd
-								printf("Found CD command!");
-                return chdir(p.filename);
-								return 0;
-                break;
-
-            case 10: //pwd
-								cwd = getcwd(buf, 150);
-								printf("\n%s",cwd);
-								return 0;
-                break;
-            };
-        }
-
         if (execve(p.argv[0], p.argv, p.envp) == -1) {
             return -1; // ERROR!
         }
-    }
+		}
+
+
 
     wait(0);
     // end main if body
@@ -191,29 +196,29 @@ size_t parseInput(struct Proc* proclist) {
 
         case 2:
             proclist[j].flags = proclist[j].flags | redirect_output_to_file;
-            proclist[j].filename = cmd_list[++i];
+            proclist[j].filename = strdup(cmd_list[++i]);
             j++;
             break;
 
         case 3:
             proclist[j].flags = proclist[j].flags |
                                 redirect_output_to_file_append;
-            proclist[j].filename = cmd_list[++i];
+            proclist[j].filename = strdup(cmd_list[++i]);
             break;
 
         case 4:
             proclist[j].flags = proclist[j].flags | redirect_error_to_file;
-            proclist[j].filename = cmd_list[++i];
+            proclist[j].filename = strdup(cmd_list[++i]);
             break;
 
         case 5:
             proclist[j].flags = proclist[j].flags | redirect_error_to_file_append;
-            proclist[j].filename = cmd_list[++i];
+            proclist[j].filename = strdup(cmd_list[++i]);
             break;
 
         case 6:
             proclist[j].flags = proclist[j].flags | redirect_file_to_input;
-            proclist[j].filename = cmd_list[++i];
+            proclist[j].filename = strdup(cmd_list[++i]);
             break;
 
         case 7:
@@ -222,16 +227,17 @@ size_t parseInput(struct Proc* proclist) {
 
         case 8://quit
 						proclist[j].flags = proclist[j].flags | is_builtin;
-						proclist[j].argv[0] = cmd_list[i];
+						proclist[j].argv[0] = strdup(cmd_list[i]);
         case 9: //cd
 						proclist[j].flags = proclist[j].flags | is_builtin;
-						proclist[j].argv[0] = cmd_list[i];
-						proclist[j].filename = cmd_list[++i];
+						proclist[j].argv[0] = strdup(cmd_list[i]);
+						proclist[j].filename = strdup(cmd_list[++i]);
+						i++;
 
 
         case 10: //pwd
             proclist[j].flags = proclist[j].flags | is_builtin;
-            proclist[j].argv[0]  = cmd_list[i];
+            proclist[j].argv[0]  = strdup(cmd_list[i]);
             break;
         };
     }
@@ -260,7 +266,7 @@ int mainloop(char** envp) {
         struct Proc newproc;
         process_list[i] = newproc;
         process_list[i].flags = 0;
-        process_list[i].filename = "\0";
+        process_list[i].filename = strdup("\0");
 
         for (j = 0; j < 50; j++) {
             process_list[i].argv[j] = 0;
